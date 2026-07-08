@@ -2,6 +2,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Caelestia
 import Caelestia.Config
 import qs.utils
@@ -41,15 +42,32 @@ Singleton {
                 fetchCoordsFromCity(configLocation);
             }
         } else if (!loc || timer.elapsed() > 900) {
-            Requests.get("https://ipinfo.io/json", text => {
-                const response = JSON.parse(text);
-                if (response.loc) {
-                    loc = response.loc;
-                    city = response.city ?? "";
-                    timer.restart();
-                }
-            });
+            if (!locationProc.running)
+                locationProc.running = true;
         }
+    }
+
+    function applyAutoLocation(text: string): void {
+        try {
+            const response = JSON.parse(text.trim());
+            if (response.ok && response.loc) {
+                loc = response.loc;
+                city = response.name ?? response.city ?? "";
+                timer.restart();
+                return;
+            }
+        } catch (e) {
+            console.warn("Failed to parse caelestia-location output:", e);
+        }
+
+        Requests.get("https://ipinfo.io/json", text => {
+            const response = JSON.parse(text);
+            if (response.loc) {
+                loc = response.loc;
+                city = response.city ?? "";
+                timer.restart();
+            }
+        });
     }
 
     function fixCityName(cityName: string): string {
@@ -267,6 +285,19 @@ Singleton {
         }
 
         target: GlobalConfig.services
+    }
+
+    Process {
+        id: locationProc
+
+        command: ["sh", "-c", "$HOME/.local/bin/caelestia-location auto --json"]
+        stdout: StdioCollector {
+            onStreamFinished: root.applyAutoLocation(text)
+        }
+        stderr: StdioCollector {
+            onStreamFinished: if (text.trim())
+                console.warn("caelestia-location:", text.trim())
+        }
     }
 
     Timer {
