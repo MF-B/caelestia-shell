@@ -18,6 +18,15 @@ Item {
     readonly property int padding: Tokens.padding.large
     readonly property int rounding: Tokens.rounding.extraLarge
 
+    function actionPrefixLength(text: string): int {
+        const prefix = GlobalConfig.launcher.actionPrefix;
+        if (text.startsWith(prefix))
+            return prefix.length;
+        if (prefix === ">" && text.startsWith("＞"))
+            return 1;
+        return 0;
+    }
+
     implicitWidth: listWrapper.width + padding * 2
     implicitHeight: search.height + listWrapper.height + padding + search.anchors.bottomMargin
 
@@ -62,14 +71,16 @@ Item {
 
         onAccepted: {
             const currentItem = list.currentList?.currentItem;
+            const prefixLength = root.actionPrefixLength(text);
+            const actionText = prefixLength > 0 ? text.slice(prefixLength).trimStart() : "";
             if (currentItem) {
                 if (list.showWallpapers) {
                     if (Colours.scheme === "dynamic" && currentItem.modelData.path !== Wallpapers.actualCurrent)
                         Wallpapers.previewColourLock = true;
                     Wallpapers.setWallpaper(currentItem.modelData.path);
                     root.screenState.launcher = false;
-                } else if (text.startsWith(GlobalConfig.launcher.actionPrefix)) {
-                    if (text.startsWith(`${GlobalConfig.launcher.actionPrefix}calc `))
+                } else if (prefixLength > 0) {
+                    if (actionText.startsWith("calc "))
                         currentItem.onClicked();
                     else
                         currentItem.modelData.onClicked(list.currentList);

@@ -12,7 +12,65 @@ Searcher {
     id: root
 
     function transformSearch(search: string): string {
-        return search.slice(GlobalConfig.launcher.actionPrefix.length).trim();
+        const prefix = GlobalConfig.launcher.actionPrefix;
+        search = search.trim().replace(/\s+/g, " ");
+        if (search.startsWith(prefix))
+            return search.slice(prefix.length).trim();
+        if (prefix === ">" && search.startsWith("＞"))
+            return search.slice(1).trim();
+        return search.trim();
+    }
+
+    function fuzzyScore(needle: string, haystack: string): int {
+        let last = -1;
+        let score = 0;
+
+        for (const ch of needle) {
+            const idx = haystack.indexOf(ch, last + 1);
+            if (idx < 0)
+                return 0;
+
+            score += idx === last + 1 ? 3 : 1;
+            last = idx;
+        }
+
+        return score;
+    }
+
+    function query(search: string): list<var> {
+        const q = transformSearch(search).toLowerCase();
+        const candidates = [...variants.instances];
+
+        if (!q)
+            return candidates;
+
+        return candidates.map(action => {
+            const name = action.name.toLowerCase();
+            const desc = action.desc.toLowerCase();
+            const command = action.command.join(" ").toLowerCase();
+
+            let score = 0;
+            if (name === q)
+                score += 1000;
+            if (name.startsWith(q))
+                score += 500;
+            if (name.includes(q))
+                score += 300;
+            if (desc.includes(q))
+                score += 120;
+            if (command.includes(q))
+                score += 80;
+            score += root.fuzzyScore(q, name) * 10;
+
+            return {
+                action,
+                score
+            };
+        }).filter(r => r.score > 0).sort((a, b) => {
+            if (a.score === b.score)
+                return a.action.name.length - b.action.name.length;
+            return b.score - a.score;
+        }).map(r => r.action);
     }
 
     list: variants.instances

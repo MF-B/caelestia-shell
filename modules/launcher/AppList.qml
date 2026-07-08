@@ -16,9 +16,46 @@ StyledListView {
     required property SearchBar search
     required property ScreenState screenState
 
+    function actionPrefixLength(text: string): int {
+        const prefix = GlobalConfig.launcher.actionPrefix;
+        if (text.startsWith(prefix))
+            return prefix.length;
+        if (prefix === ">" && text.startsWith("＞"))
+            return 1;
+        return 0;
+    }
+
+    readonly property string mode: {
+        const text = search.text;
+        const prefixLength = actionPrefixLength(text);
+        if (prefixLength > 0) {
+            const actionText = text.slice(prefixLength).trimStart();
+            for (const action of ["calc", "scheme", "variant"])
+                if (actionText.startsWith(`${action} `))
+                    return action;
+
+            return "actions";
+        }
+
+        return "apps";
+    }
+
+    readonly property var results: {
+        if (mode === "actions")
+            return Actions.query(search.text);
+        if (mode === "calc")
+            return [0];
+        if (mode === "scheme")
+            return Schemes.query(search.text);
+        if (mode === "variant")
+            return M3Variants.query(search.text);
+        return Apps.search(search.text);
+    }
+
     model: ScriptModel {
         id: model
 
+        values: root.results
         onValuesChanged: root.currentIndex = 0
     }
 
@@ -45,65 +82,40 @@ StyledListView {
         }
     }
 
-    state: {
-        const text = search.text;
-        const prefix = GlobalConfig.launcher.actionPrefix;
-        if (text.startsWith(prefix)) {
-            for (const action of ["calc", "scheme", "variant"])
-                if (text.startsWith(`${prefix}${action} `))
-                    return action;
-
-            return "actions";
-        }
-
-        return "apps";
+    delegate: {
+        if (mode === "actions")
+            return actionItem;
+        if (mode === "calc")
+            return calcItem;
+        if (mode === "scheme")
+            return schemeItem;
+        if (mode === "variant")
+            return variantItem;
+        return appItem;
     }
 
-    onStateChanged: {
-        if (state === "scheme" || state === "variant")
+    state: mode
+
+    onModeChanged: {
+        if (mode === "scheme" || mode === "variant")
             Schemes.reload();
     }
 
     states: [
         State {
             name: "apps"
-
-            PropertyChanges {
-                model.values: Apps.search(search.text)
-                root.delegate: appItem
-            }
         },
         State {
             name: "actions"
-
-            PropertyChanges {
-                model.values: Actions.query(search.text)
-                root.delegate: actionItem
-            }
         },
         State {
             name: "calc"
-
-            PropertyChanges {
-                model.values: [0]
-                root.delegate: calcItem
-            }
         },
         State {
             name: "scheme"
-
-            PropertyChanges {
-                model.values: Schemes.query(search.text)
-                root.delegate: schemeItem
-            }
         },
         State {
             name: "variant"
-
-            PropertyChanges {
-                model.values: M3Variants.query(search.text)
-                root.delegate: variantItem
-            }
         }
     ]
 
@@ -126,10 +138,6 @@ StyledListView {
                     duration: Tokens.anim.durations.small
                     easing: Tokens.anim.standardAccel
                 }
-            }
-            PropertyAction {
-                targets: [model, root]
-                properties: "values,delegate"
             }
             ParallelAnimation {
                 Anim {

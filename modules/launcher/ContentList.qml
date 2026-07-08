@@ -18,7 +18,16 @@ Item {
     required property int padding
     required property int rounding
 
-    readonly property bool showWallpapers: search.text.startsWith(`${GlobalConfig.launcher.actionPrefix}wallpaper `)
+    function actionText(text: string): string {
+        const prefix = GlobalConfig.launcher.actionPrefix;
+        if (text.startsWith(prefix))
+            return text.slice(prefix.length).trimStart();
+        if (prefix === ">" && text.startsWith("＞"))
+            return text.slice(1).trimStart();
+        return "";
+    }
+
+    readonly property bool showWallpapers: actionText(search.text).startsWith("wallpaper ")
     readonly property var currentList: showWallpapers ? wallpaperList.item : appList.item // Can be either ListView or PathView, so can't type properly
     property string animState: showWallpapers ? "wallpapers" : "apps"
 
