@@ -79,12 +79,33 @@ StackView {
                 id: item
 
                 required property QsMenuEntry modelData
+                readonly property bool hasEntry: modelData !== null && modelData !== undefined
+                readonly property bool isSeparator: hasEntry && modelData.isSeparator
 
                 implicitWidth: Tokens.sizes.bar.trayMenuWidth
-                implicitHeight: modelData.isSeparator ? 1 : children.implicitHeight
+                implicitHeight: !hasEntry ? 0 : isSeparator ? 1 : children.implicitHeight
+                visible: hasEntry
 
                 radius: Tokens.rounding.full
-                color: modelData.isSeparator ? Colours.palette.m3outlineVariant : "transparent"
+                color: isSeparator ? Colours.palette.m3outlineVariant : "transparent"
+
+                function materialIconName(iconName: string, label: string): string {
+                    const icon = iconName.toLowerCase();
+                    const text = label.toLowerCase();
+
+                    if (icon.includes("refresh") || text.includes("restart") || text.includes("reload"))
+                        return "refresh";
+                    if (icon.includes("exit") || icon.includes("quit") || text.includes("exit") || text.includes("quit"))
+                        return "logout";
+                    if (icon.includes("configure") || icon.includes("preferences") || icon.includes("settings"))
+                        return "settings";
+                    if (icon.includes("help") || icon.includes("about"))
+                        return "info";
+                    if (icon.includes("clear") || icon.includes("delete") || icon.includes("remove"))
+                        return "delete";
+
+                    return "";
+                }
 
                 Loader {
                     id: children
@@ -93,7 +114,7 @@ StackView {
                     anchors.left: parent.left
                     anchors.right: parent.right
 
-                    active: !item.modelData.isSeparator
+                    active: item.hasEntry && !item.isSeparator
 
                     sourceComponent: Item {
                         implicitHeight: label.implicitHeight
@@ -128,11 +149,40 @@ StackView {
 
                             active: item.modelData.icon !== ""
 
-                            sourceComponent: IconImage {
-                                asynchronous: true
-                                implicitSize: label.implicitHeight
+                            sourceComponent: Item {
+                                readonly property real size: label.implicitHeight
+                                readonly property string materialIcon: item.materialIconName(item.modelData.icon.toString(), item.modelData.text)
 
-                                source: item.modelData.icon
+                                implicitWidth: size
+                                implicitHeight: size
+
+                                Loader {
+                                    id: sysIcon
+
+                                    anchors.fill: parent
+                                    asynchronous: true
+                                    active: materialIcon === ""
+                                    opacity: fallback.visible ? 0 : 1
+                                    sourceComponent: IconImage {
+                                        asynchronous: true
+                                        source: item.modelData.icon
+                                    }
+
+                                    Behavior on opacity {
+                                        CAnim {}
+                                    }
+                                }
+
+                                MaterialIcon {
+                                    id: fallback
+
+                                    anchors.centerIn: parent
+                                    visible: materialIcon !== "" || sysIcon.item?.status === Image.Error
+                                    text: materialIcon || "radio_button_unchecked"
+                                    color: item.modelData.enabled ? Colours.palette.m3onSurface : Colours.palette.m3outline
+                                    fontStyle: Tokens.font.icon.builders.small.scale(1.2).weight(Font.Medium).build()
+                                }
+
                             }
                         }
 
