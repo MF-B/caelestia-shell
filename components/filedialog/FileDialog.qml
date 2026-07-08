@@ -9,7 +9,7 @@ import qs.services
 LazyLoader {
     id: loader
 
-    property list<string> cwd: ["Home"]
+    property list<string> cwd: ["Home", "Pictures"]
     property string filterLabel: "All files"
     property list<string> filters: ["*"]
     property string title: qsTr("Select a file")

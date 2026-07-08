@@ -179,6 +179,27 @@ Item {
             }
         }
 
+        function fallbackIconName(): string {
+            const file = item.modelData;
+            if (file.isDir) {
+                if (file.name === "Desktop")
+                    return "desktop_windows";
+                if (file.name === "Documents")
+                    return "description";
+                if (file.name === "Downloads")
+                    return "file_download";
+                if (file.name === "Music")
+                    return "music_note";
+                if (file.name === "Pictures")
+                    return "image";
+                if (file.name === "Videos")
+                    return "video_library";
+                return "folder";
+            }
+
+            return file.isImage ? "image" : "draft";
+        }
+
         CachingIconImage {
             id: icon
 
@@ -187,18 +208,28 @@ Item {
             anchors.topMargin: Tokens.padding.medium
 
             implicitSize: Sizes.itemWidth - Tokens.padding.medium * 2
+            opacity: fallbackIcon.visible ? 0 : 1
 
             Component.onCompleted: {
                 const file = item.modelData;
                 if (file.isImage)
                     source = Qt.resolvedUrl(file.path);
-                else if (!file.isDir)
-                    source = Quickshell.iconPath(file.mimeType.replace("/", "-"), "application-x-zerosize");
-                else if (root.dialog.cwd.length === 1 && ["Desktop", "Documents", "Downloads", "Music", "Pictures", "Public", "Templates", "Videos"].includes(file.name))
-                    source = Quickshell.iconPath(`folder-${file.name.toLowerCase()}`);
-                else
-                    source = Quickshell.iconPath("inode-directory");
             }
+
+            Behavior on opacity {
+                CAnim {}
+            }
+        }
+
+        MaterialIcon {
+            id: fallbackIcon
+
+            anchors.centerIn: icon
+
+            visible: !item.modelData.isImage || icon.status === Image.Error
+            text: item.fallbackIconName()
+            color: Colours.palette.m3onSurfaceVariant
+            fontStyle: Tokens.font.icon.builders.extraLarge.scale(2.2).weight(Font.Medium).build()
         }
 
         StyledText {
