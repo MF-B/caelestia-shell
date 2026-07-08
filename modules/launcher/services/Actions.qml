@@ -12,7 +12,7 @@ Searcher {
     id: root
 
     function transformSearch(search: string): string {
-        return search.slice(GlobalConfig.launcher.actionPrefix.length);
+        return search.slice(GlobalConfig.launcher.actionPrefix.length).trim();
     }
 
     list: variants.instances
