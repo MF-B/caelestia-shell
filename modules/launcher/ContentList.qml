@@ -21,9 +21,9 @@ Item {
     function actionText(text: string): string {
         const prefix = GlobalConfig.launcher.actionPrefix;
         if (text.startsWith(prefix))
-            return text.slice(prefix.length).trimStart();
+            return text.slice(prefix.length).replace(/^\s+/, "");
         if (prefix === ">" && text.startsWith("＞"))
-            return text.slice(1).trimStart();
+            return text.slice(1).replace(/^\s+/, "");
         return "";
     }
 

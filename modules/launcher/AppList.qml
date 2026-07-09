@@ -29,7 +29,7 @@ StyledListView {
         const text = search.text;
         const prefixLength = actionPrefixLength(text);
         if (prefixLength > 0) {
-            const actionText = text.slice(prefixLength).trimStart();
+            const actionText = text.slice(prefixLength).replace(/^\s+/, "");
             for (const action of ["calc", "scheme", "variant"])
                 if (actionText.startsWith(`${action} `))
                     return action;

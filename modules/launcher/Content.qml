@@ -72,7 +72,7 @@ Item {
         onAccepted: {
             const currentItem = list.currentList?.currentItem;
             const prefixLength = root.actionPrefixLength(text);
-            const actionText = prefixLength > 0 ? text.slice(prefixLength).trimStart() : "";
+            const actionText = prefixLength > 0 ? text.slice(prefixLength).replace(/^\s+/, "") : "";
             if (currentItem) {
                 if (list.showWallpapers) {
                     if (Colours.scheme === "dynamic" && currentItem.modelData.path !== Wallpapers.actualCurrent)
