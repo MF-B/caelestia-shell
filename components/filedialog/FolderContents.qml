@@ -208,7 +208,7 @@ Item {
             anchors.topMargin: Tokens.padding.medium
 
             implicitSize: Sizes.itemWidth - Tokens.padding.medium * 2
-            opacity: fallbackIcon.visible ? 0 : 1
+            opacity: item.modelData.isImage && status === Image.Ready ? 1 : 0
 
             Component.onCompleted: {
                 const file = item.modelData;
@@ -226,7 +226,7 @@ Item {
 
             anchors.centerIn: icon
 
-            visible: !item.modelData.isImage || icon.status === Image.Error
+            visible: !item.modelData.isImage || icon.status !== Image.Ready
             text: item.fallbackIconName()
             color: Colours.palette.m3onSurfaceVariant
             fontStyle: Tokens.font.icon.builders.extraLarge.scale(2.2).weight(Font.Medium).build()

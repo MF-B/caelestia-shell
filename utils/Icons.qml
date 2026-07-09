@@ -79,6 +79,28 @@ Singleton {
             Office: "content_paste"
         })
 
+    readonly property var systemIconFallbacks: ({
+            "": "apps",
+            "image-missing": "apps",
+            "preferences-desktop-theme": "palette",
+            "preferences-desktop-theme-symbolic": "palette",
+            "multimedia-volume-control": "volume_up",
+            "multimedia-volume-control-symbolic": "volume_up",
+            "input-keyboard": "keyboard",
+            "input-keyboard-symbolic": "keyboard",
+            "application-x-executable": "terminal",
+            "application-x-shellscript": "terminal",
+            "gtk-refresh": "refresh",
+            "view-refresh": "refresh",
+            "system-reboot": "restart_alt",
+            "system-restart": "restart_alt",
+            "application-exit": "logout",
+            "system-log-out": "logout",
+            "preferences-system": "settings",
+            "preferences-system-symbolic": "settings",
+            "help-about": "info"
+        })
+
     // Checks if a name matches an icon config. Icon configs can have the following keys:
     // - name: The exact name of the icon
     // - regex: A regex to match against the name (takes priority over name)
@@ -117,6 +139,36 @@ Singleton {
             for (const [key, value] of Object.entries(categoryIcons))
                 if (categories.includes(key))
                     return value;
+        return fallback;
+    }
+
+    function normaliseIconName(icon: string): string {
+        icon = (icon ?? "").toString().split("?")[0];
+        icon = icon.slice(icon.lastIndexOf("/") + 1);
+        return icon.replace(/\.(svg|png|xpm)$/i, "");
+    }
+
+    function getSystemIconFallback(icon: string): string {
+        const normalised = normaliseIconName(icon);
+        return systemIconFallbacks[normalised] ?? "";
+    }
+
+    function shouldUseMaterialIcon(icon: string): bool {
+        return getSystemIconFallback(icon) !== "";
+    }
+
+    function getDesktopEntryFallbackIcon(icon: string, categories: var, name: string, fallback = "apps"): string {
+        const iconFallback = getSystemIconFallback(icon);
+        if (iconFallback)
+            return iconFallback;
+
+        if (categories)
+            for (const [key, value] of Object.entries(categoryIcons))
+                if (categories.includes(key))
+                    return value;
+
+        if (name)
+            return getAppCategoryIcon(name, fallback);
         return fallback;
     }
 

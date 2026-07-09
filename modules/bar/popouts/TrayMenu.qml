@@ -7,6 +7,7 @@ import Quickshell.Widgets
 import Caelestia.Config
 import qs.components
 import qs.services
+import qs.utils
 
 StackView {
     id: root
@@ -151,7 +152,7 @@ StackView {
 
                             sourceComponent: Item {
                                 readonly property real size: label.implicitHeight
-                                readonly property string materialIcon: item.materialIconName(item.modelData.icon.toString(), item.modelData.text)
+                                readonly property string materialIcon: Icons.getSystemIconFallback(item.modelData.icon.toString()) || item.materialIconName(item.modelData.icon.toString(), item.modelData.text)
 
                                 implicitWidth: size
                                 implicitHeight: size
